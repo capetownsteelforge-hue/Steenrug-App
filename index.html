@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steenrug-App - Clanwilliam</title>
+<style>
+body{font-family:Arial;margin:0;background:#f1f5f9;padding:12px}
+h2{text-align:center} .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.block{padding:24px 10px;border-radius:14px;color:#fff;text-align:center;font-weight:800;cursor:pointer;font-size:15px}
+.citrus{background:#2563eb} .grape{background:#f97316}
+.card{background:#fff;padding:14px;border-radius:14px;margin-top:12px}
+button{width:100%;padding:16px;border:none;border-radius:10px;font-weight:800;font-size:16px;margin-top:8px;cursor:pointer}
+.green{background:#16a34a;color:#fff} .blue{background:#2563eb;color:#fff}
+.task{padding:14px;border:1px solid #ddd;border-radius:10px;margin:6px 0;cursor:pointer;font-size:16px}
+.task.sel{background:#dbeafe;border-color:#2563eb}
+.foreman{display:inline-block;width:48%;padding:14px;border:2px solid #2563eb;border-radius:10px;text-align:center;cursor:pointer;box-sizing:border-box}
+.foreman.sel{background:#2563eb;color:#fff}
+.job{padding:12px;border-radius:10px;margin:8px 0;background:#fee2e2}
+.job.done{background:#dcfce7}
+.small{font-size:13px;color:#64748b;text-align:center}
+</style></head><body>
+<div id="app"></div>
+<script>
+let blocks=[
+ {id:'C1',name:'C1 Sitrus Wes',type:'citrus'},
+ {id:'G1',name:'G1 Druiwe Bo-Net',type:'grape'},
+ {id:'C2',name:'C2 Sitrus Sentrum',type:'citrus'},
+ {id:'C3',name:'C3 Sitrus Net',type:'citrus'},
+ {id:'C4',name:'C4 Sitrus Oos',type:'citrus'},
+ {id:'G3',name:'G3 Druiwe Oos',type:'grape'},
+ {id:'G2',name:'G2 Druiwe Onder',type:'grape'},
+];
+let tasks=JSON.parse(localStorage.getItem('steenrug_tasks')||'[]');
+let selBlock=null, selTask='Besproei 4h / Irrigate 4h', selForeman='Voorman 1';
+function renderMap(){
+ let h='<h2>STEENRUG-APP</h2><p class=small>Blou = Sitrus / Citrus | Oranje = Druiwe / Grapes<br>Radio bly vir dringend. App is vir beplanning.<br>Tap n blok om te beplan</p><div class=grid>';
+ blocks.forEach(b=>{h+=`<div class="block ${b.type}" onclick="openPlan('${b.id}')">${b.name}<br><small>${b.type.toUpperCase()}</small></div>`});
+ h+='</div><div class=card><b>Vandag se Werk / Today:</b><br>'+(tasks.length?tasks.map((t,i)=>`<div class="job ${t.done?'done':''}">${t.block} - ${t.task} | ${t.foreman} | ${t.done?'KLAAR ✅ '+t.time:'NOG NIE ❌'} <button onclick="toggle(${i})" style="background:#fff;padding:8px;font-size:14px">KLAAR / DONE</button></div>`).join(''):'Nog geen werk nie. Tap n blok.')+'</div>';
+ h+='<button class=blue onclick="exportPDF()">📄 Spuit Dagboek / Spray Diary PDF</button><button onclick="clearAll()" style="background:#e2e8f0">Clear All</button>';
+ document.getElementById('app').innerHTML=h;
+}
+function openPlan(id){selBlock=id;let b=blocks.find(x=>x.id==id);
+ let h=`<h2>${b.name}</h2><p class=small>Wat moet gedoen word?</p>`;
+ ['Besproei 4h / Irrigate 4h','Spuit Koper / Spray Copper','Spuit Insek / Spray Insect','Snoei / Prune','Bemesting / Fertilise','Pomp Check / Check Pump'].forEach(t=>{h+=`<div class="task ${t==selTask?'sel':''}" onclick="selTask='${t}';openPlan('${id}')">${t}</div>`});
+ h+=`<p><b>Wie toe? / Assign to:</b></p><div><span class="foreman ${selForeman=='Voorman 1'?'sel':''}" onclick="selForeman='Voorman 1';openPlan('${id}')">Voorman 1</span> <span class="foreman ${selForeman=='Voorman 2'?'sel':''}" onclick="selForeman='Voorman 2';openPlan('${id}')">Voorman 2</span></div>`;
+ h+=`<button class=green onclick="assign()">✅ STUUR / ASSIGN</button><button onclick="renderMap()">⬅ Terug / Back</button>`;
+ document.getElementById('app').innerHTML=h;
+}
+function assign(){tasks.push({block:selBlock,task:selTask,foreman:selForeman,done:false,time:''});localStorage.setItem('steenrug_tasks',JSON.stringify(tasks));alert(selBlock+' - '+selTask+' -> '+selForeman);renderMap();}
+function toggle(i){tasks[i].done=!tasks[i].done;tasks[i].time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});localStorage.setItem('steenrug_tasks',JSON.stringify(tasks));renderMap();}
+function clearAll(){if(confirm('Clear all?')){tasks=[];localStorage.removeItem('steenrug_tasks');renderMap();}}
+function exportPDF(){let txt='STEENRUG - CLANWILLIAM FARM - SPUIT & BESPROEI DAGBOEK\n\n'+tasks.map(t=>`${t.block} | ${t.task} | ${t.foreman} | ${t.done?'KLAAR '+t.time:'PENDING'} | ${new Date().toLocaleDateString()}`).join('\n');let w=window.open('');w.document.write('<pre>'+txt+'</pre><button onclick="window.print()">Print / Save PDF - Stuur op WhatsApp</button>');}
+renderMap();
+</script></body></html>
